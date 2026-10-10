@@ -5,7 +5,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 PANEL_CODE = "YUVI_001"
-PANEL_NAME = "SDK PANEL"
+PANEL_NAME = "YUVI PANEL"
 
 [[d1_databases]]
 binding = "DB"
