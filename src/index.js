@@ -236,9 +236,8 @@ export default {
         const p = await formParams(request);
         const dur = String(p.duration || '');
         const limit = Math.min(10, Math.max(1, parseInt(p.device_limit, 10) || 1));
-        let amount = Math.min(50, Math.max(1, parseInt(p.bulk_amount, 10) || 1));
-        const bulk = p.is_bulk != null || amount > 1;
-        if (!bulk) amount = 1;
+        let amount = Math.min(500, Math.max(1, parseInt(p.bulk_amount, 10) || 1));
+        if (p.is_bulk == null && amount <= 1) amount = 1;
         let custom = String(p.custom_key || '').trim();
         let server = 'PRIVATE';
         if (myRole === 'OWNER') { const s = String(p.server_type || 'PRIVATE').toUpperCase(); if (['ADMIN', 'SAFE', 'PRIVATE', 'PUBLIC'].includes(s)) server = s; }
@@ -255,18 +254,30 @@ export default {
             }
             if (!error) {
               if (myRole !== 'OWNER') await db.prepare('UPDATE users SET balance=balance-? WHERE id=? AND balance>=?').bind(total, myId, total).run();
-              for (let i = 0; i < amount; i++) {
-                let kv = (amount === 1 && custom) ? custom : dur + '-' + arcxRand(12);
-                let done = false;
-                for (let t = 0; t < 10 && !done; t++) {
-                  try { await db.prepare('INSERT INTO api_keys (key_value,duration,device_limit,panel_code,created_by,server_type) VALUES (?,?,?,?,?,?)').bind(kv, dur, limit, myPanel, myId, server).run(); keys.push(kv); done = true; }
-                  catch (e) {
-                    if (amount === 1 && custom) { error = 'Duplicate key. Try another custom key.'; break; }
-                    kv = dur + '-' + arcxRand(12);
-                  }
+              const mkStmt = (kv) => db.prepare('INSERT INTO api_keys (key_value,duration,device_limit,panel_code,created_by,server_type) VALUES (?,?,?,?,?,?)').bind(kv, dur, limit, myPanel, myId, server);
+              if (amount === 1 && custom) {
+                try { await mkStmt(custom).run(); keys.push(custom); }
+                catch (e) { error = 'Duplicate key. Try another custom key.'; }
+              } else {
+                const seen = new Set(), cands = [];
+                for (let i = 0; i < amount; i++) { let kv; do { kv = dur + '-' + arcxRand(12); } while (seen.has(kv)); seen.add(kv); cands.push(kv); }
+                const put = async (list) => {
+                  const res = await Promise.allSettled(list.map(kv => mkStmt(kv).run()));
+                  const failed = [];
+                  res.forEach((r, j) => { if (r.status === 'fulfilled') keys.push(list[j]); else failed.push(list[j]); });
+                  return failed;
+                };
+                let failed = [];
+                for (let i = 0; i < cands.length; i += 50) failed = failed.concat(await put(cands.slice(i, i + 50)));
+                if (failed.length) {
+                  const retry = [];
+                  for (let i = 0; i < failed.length; i++) { let kv; do { kv = dur + '-' + arcxRand(12); } while (seen.has(kv)); seen.add(kv); retry.push(kv); }
+                  failed = await put(retry);
                 }
+                if (failed.length) error = failed.length + ' keys failed (duplicate), baaki ban gayi.';
               }
-              if (keys.length) ok = keys.length + ' key(s) generated (' + dur + ', ' + limit + ' device).';
+              if (keys.length && !error) ok = keys.length + ' key(s) generated (' + dur + ', ' + limit + ' device).';
+              else if (keys.length && error) ok = keys.length + ' key(s) generated (' + dur + ', ' + limit + ' device).';
             }
           }
         }
