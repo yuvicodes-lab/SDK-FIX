@@ -1,0 +1,13 @@
+name = "sdk-panel"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+PANEL_CODE = "YUVI_001"
+PANEL_NAME = "SDK PANEL"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "sdk"
+database_id = "02ec2c47-2db5-4b52-b914-6b67b93511f4"
