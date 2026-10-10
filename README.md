@@ -1,63 +1,55 @@
-# SDK Panel — Cloudflare Worker + D1 (panel-glass SDK alag website)
+# FULL Panel — Cloudflare Worker + D1 (panel-glass.zip ka poora port)
 
-PHP wala `panel-glass.zip` ka **SDK feature only** — same glass UI, mobile responsive — ab PHP me nahi, **Cloudflare Worker** me.
+`panel-glass.zip` ka **poora panel** — PHP ki jagah **Cloudflare Worker + D1**. Same iOS blue glass UI, mobile responsive.
 
-Features ported:
-- Dashboard (MUNDO + BCORE stats + recent keys)
-- Generate SDK (7/15/30/60 days, pkg/app limit, F1/F2)
-- SDK Keys (block/unblock/delete + pkg/app binding add/edit/block/delete)
-- Server (maintenance ON/OFF + endpoint URL + docs)
-- Hash Vault (lib .so SHA-256)
-- API: `POST /sdk/mundo/:panel` (AES-128-ECB) + `POST /sdk/bcore/:panel` (RC4+Base64) — purane `.so` clients same URL format par kaam karenge
+## Pages
 
-D1 binding (tumhara):
+- `/login` (device-lock), `/register` (referral), `/reset-device` (24h limit), `/join-panel` (empty panel claim), `/setup` (pehla admin)
+- `/dashboard` (role stats), `/generate` (pricing + balance + bulk + server type), `/keys` (reset/edit/extend/bulk)
+- `/users`, `/admins`, `/permissions`, `/referral` (OWNER/ADMIN rules PHP jaise)
+- `/server` (maintenance + mod config), `/settings` (password + branding + API URLs), `/aes` (AES rotate + activation keys), `/api-test`, `/loader-manager`, `/create-panel` (id==1)
+- `/sdk/*` — MUNDO + BCORE dashboard/generate/keys/server/hash (sirf main OWNER id==1)
+
+## API (bina login)
+
+- `POST /connect/:panel` — game=PUBG, user_key, serial
+- `POST /encrypt/:panel` — same + AES-256-CBC payload (panel active + AES configured hona chahiye)
+- `POST /sdk/mundo/:panel` — AES-128-ECB encrypted
+- `POST /sdk/bcore/:panel` — RC4+Base64 encrypted
+
+## Deploy
+
+```bash
+cd sdk-worker
+npm install
+npx wrangler d1 execute sdk --file=schema.sql
+npx wrangler deploy
+```
+
+Pehli baar site par `/setup` khol ke admin banao. Purane DB par bhi safe hai — Worker startup par naye columns auto-migrate hote hain.
+
+## Note (PHP se farak)
+
+- `loader-manager` me **zip upload nahi** (Worker me disk nahi hota) — uski jagah 4 slot me **lib URL** save hota hai, `connect` API wahi URL deta hai, khaali ho to GitHub fallback.
+- CSRF check nahi hai, Turnstile nahi hai (PHP login me bhi verify nahi tha).
+- `/blocked` route nahi hai (zip me uska file tha hi nahi).
+- `/sdk/api-test`, `/sdk/encryption`, `/sdk/settings` nahi hain (zip me unke file missing hain).
+
+## Files
+
+- `src/index.js` — router + saare POST actions + 4 API handlers
+- `src/panel-ui.js` — full-panel layout + role nav
+- `src/p-auth.js` — login/register/reset/join pages + device fingerprint
+- `src/p-dash.js` — dashboard + generate + key-list
+- `src/p-users.js` — users/admins/permissions/referral
+- `src/p-system.js` — server/settings/aes/api-test/create-panel/loader
+- `src/p-connect.js` — connect + encrypt API
+- `src/crypto.js`, `src/ui.js`, `src/pages-*.js` — SDK engine (same as pehle)
+
+D1 binding (`wrangler.toml` me set):
 ```toml
 [[d1_databases]]
 binding = "DB"
 database_name = "sdk"
 database_id = "02ec2c47-2db5-4b52-b914-6b67b93511f4"
 ```
-
-## 1) Deploy
-
-```bash
-cd sdk-worker
-npm install
-# D1 table banao (ek baar):
-npx wrangler d1 execute sdk --file=schema.sql
-# deploy:
-npx wrangler deploy
-```
-
-`wrangler.toml` me `PANEL_CODE` / `PANEL_NAME` badal sakte ho:
-```toml
-[vars]
-PANEL_CODE = "YUVI_001"   # purane clients ke liye same rakho
-PANEL_NAME = "SDK PANEL"
-```
-
-## 2) Pehla login
-
-Deploy ke baad site kholo → `/setup` par pehla admin banao → uske baad `/login`.
-
-## 3) Purana MySQL data lana ho to
-
-`mundo_keys`, `bcore_keys`, `*_bindings`, `sdk_hash_vault`, `sdk_server_status` ka CSV/export karke D1 me insert karo. `panel_code` same (`YUVI_001`) rakho taaki purane app URL `/sdk/mundo/YUVI_001` kaam karte rahein.
-
-## 4) API URL
-
-```
-https://<worker-url>/sdk/mundo/YUVI_001
-https://<worker-url>/sdk/bcore/YUVI_001
-```
-
-## Files
-
-- `src/index.js` — router + auth + saare pages POST actions + dono API
-- `src/crypto.js` — RC4 (BCORE) + AES-128-ECB via node:crypto (MUNDO) + password hash
-- `src/ui.js` — same iOS blue glass layout/sidebar/header + login/setup
-- `src/pages-dash.js` — dashboard + generate
-- `src/pages-keys.js` — keys + bindings
-- `src/pages-server.js` — server + hash
-- `schema.sql` — D1 tables
-- `wrangler.toml` — tumhara D1 binding already set

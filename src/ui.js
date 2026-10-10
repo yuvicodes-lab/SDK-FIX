@@ -7,7 +7,7 @@ export function navClass(path, cur) {
   return base + (path === cur ? 'nav-active text-white font-semibold' : 'text-slate-700');
 }
 
-const CSS = `
+export const CSS = `
 *{ -webkit-tap-highlight-color: transparent; }
 html,body{height:100%;}
 body{background:linear-gradient(135deg,#c7d9f5 0%,#b3cdf0 25%,#cfe0f5 50%,#bdd3f0 75%,#c7d9f5 100%);background-size:300% 300%;animation:gradientShift 20s ease infinite;background-attachment:fixed;position:relative;overflow-x:hidden;color:#1e293b;}
@@ -50,7 +50,7 @@ input,select,textarea{border-radius:14px !important;}
 ::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.3);border-radius:10px;}
 `;
 
-const BASE_JS = `
+export const BASE_JS = `
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('-translate-x-full');document.getElementById('sidebar-overlay').classList.toggle('hidden');}
 function switchDualTab(containerId,tabName){const container=document.getElementById(containerId);if(!container)return;const wrapper=container.closest('.dual-tab-wrapper');if(!wrapper)return;const buttons=wrapper.querySelectorAll('.dual-tab-btn');const panels=wrapper.querySelectorAll('.tab-content-panel');buttons.forEach(b=>b.classList.remove('active-mundo','active-bcore'));panels.forEach(p=>p.classList.remove('active'));const ab=wrapper.querySelector('.dual-tab-btn[data-tab="'+tabName+'"]');const ap=wrapper.querySelector('.tab-content-panel[data-tab="'+tabName+'"]');if(ab)ab.classList.add(tabName==='mundo'?'active-mundo':'active-bcore');if(ap)ap.classList.add('active');try{localStorage.setItem('sdkTab_'+wrapper.id,tabName);}catch(e){}}
 document.addEventListener('DOMContentLoaded',function(){document.querySelectorAll('.dual-tab-wrapper').forEach(function(w){let saved='mundo';try{saved=localStorage.getItem('sdkTab_'+w.id)||'mundo';}catch(e){}const btn=w.querySelector('.dual-tab-btn[data-tab="'+saved+'"]')||w.querySelector('.dual-tab-btn');if(!btn)return;const tab=btn.getAttribute('data-tab');w.querySelectorAll('.dual-tab-btn').forEach(b=>b.classList.remove('active-mundo','active-bcore'));w.querySelectorAll('.tab-content-panel').forEach(p=>p.classList.remove('active'));btn.classList.add(tab==='mundo'?'active-mundo':'active-bcore');const p=w.querySelector('.tab-content-panel[data-tab="'+tab+'"]');if(p)p.classList.add('active');});});
