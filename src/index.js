@@ -308,7 +308,6 @@ async function handleMundo(request, db, panelCode) {
   } catch (e) { return send({ status: false, code: 'error', message: 'DB error' }, 500); }
 }
 function isExpiredLocal(row) { const t = Date.parse(String(row.created_at || '').replace(' ', 'T') + 'Z'); return Date.now() > (isNaN(t) ? 0 : t) + (row.duration_days | 0) * 864e5; }
-function tsMs(s) { const t = Date.parse(String(s || '').replace(' ', 'T') + 'Z'); return isNaN(t) ? Date.now() : t; }
 
 // ================= BCORE API =================
 async function handleBcore(request, db, panelCode) {
