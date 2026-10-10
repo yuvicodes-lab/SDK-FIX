@@ -1,7 +1,8 @@
 import { CSS, BASE_JS, esc, navClass } from './ui.js';
 
 export function panelLayout(o) {
-  const { title, route, sess, panelName, content } = o;
+  const { title, route, sess, panelName, content, theme } = o;
+  const th = theme || 'blue';
   const role = sess.role || 'RESELLER';
   const isOA = role === 'OWNER' || role === 'ADMIN';
   const isOwner = role === 'OWNER';
@@ -32,11 +33,11 @@ export function panelLayout(o) {
     + '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">'
     + '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">'
     + '<style>' + CSS + '</style></head>'
-    + '<body class="flex h-screen overflow-hidden relative">'
+    + '<body class="flex h-screen overflow-hidden relative" data-theme="' + esc(th) + '">'
     + '<div class="droplet drop-1"></div><div class="droplet drop-2"></div><div class="droplet drop-3"></div><div class="droplet drop-4"></div><div class="droplet drop-5"></div><div class="droplet drop-6"></div><div class="droplet drop-7"></div><div class="droplet drop-8"></div>'
     + '<div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 hidden md:hidden"></div>'
     + '<aside id="sidebar" class="w-72 glass-sidebar flex flex-col absolute inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 z-50">'
-    + '<div class="h-20 flex items-center justify-between px-6 border-b border-white/25"><h1 class="text-lg font-extrabold tracking-tight flex items-center gap-3 truncate"><div class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center shadow-lg border border-white/50"><i class="bi bi-shield-check text-lg"></i></div><span class="truncate uppercase bg-gradient-to-r from-blue-700 to-blue-900 bg-clip-text text-transparent">' + esc(panelName) + '</span></h1>'
+    + '<div class="h-20 flex items-center justify-between px-6 border-b border-white/25"><h1 class="text-lg font-extrabold tracking-tight flex items-center gap-3 truncate"><div class="w-10 h-10 shrink-0 rounded-xl avatar-premium text-white flex items-center justify-center shadow-lg border border-white/50"><i class="bi bi-shield-check text-lg"></i></div><span class="truncate uppercase brand-text">' + esc(panelName) + '</span></h1>'
     + '<button onclick="toggleSidebar()" class="md:hidden text-slate-600 text-2xl"><i class="bi bi-x-lg"></i></button></div>'
     + '<nav class="flex-1 py-6 px-4 overflow-y-auto space-y-1.5">'
     + '<a href="/dashboard" class="' + navClass('dashboard', route) + '"><i class="bi bi-grid-1x2-fill text-lg w-6 text-center"></i><span>Dashboard</span></a>'
@@ -49,9 +50,9 @@ export function panelLayout(o) {
     + '<header class="h-16 md:h-20 glass-header sticky top-0 z-30 flex items-center justify-between px-4 lg:px-10">'
     + '<div class="flex items-center gap-3 z-10 w-1/4"><button onclick="toggleSidebar()" class="md:hidden text-slate-600 bg-white/30 p-2.5 rounded-xl border border-white/50 shadow-sm"><i class="bi bi-list text-2xl"></i></button>'
     + '<div class="hidden md:flex flex-col"><span class="text-[10px] text-slate-500 font-extrabold uppercase tracking-wider">Workspace ID</span><h2 class="font-bold text-slate-700 text-[15px]"><span class="bg-white/35 text-blue-700 px-3 py-1 rounded-lg border border-white/50 font-mono text-sm shadow-sm">' + esc(sess.panel_code || '') + '</span></h2></div></div>'
-    + '<div class="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center z-0 w-1/2 max-w-[200px] md:max-w-xs text-center"><h2 class="text-base md:text-xl font-black tracking-[0.1em] uppercase truncate w-full"><span class="bg-gradient-to-r from-blue-700 to-blue-900 bg-clip-text text-transparent">' + esc(panelName) + '</span></h2><div class="h-1 w-10 md:w-14 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full mt-1 mx-auto"></div></div>'
+    + '<div class="absolute left-1/2 transform -translate-x-1/2 flex flex-col items-center z-0 w-1/2 max-w-[200px] md:max-w-xs text-center"><h2 class="text-base md:text-xl font-black tracking-[0.1em] uppercase truncate w-full"><span class="brand-text">' + esc(panelName) + '</span></h2><div class="h-1 w-10 md:w-14 rounded-full mt-1 mx-auto avatar-premium"></div></div>'
     + '<div class="flex items-center justify-end gap-3 z-10 w-1/4"><div class="hidden sm:flex flex-col items-end mr-1"><span class="text-sm font-bold text-slate-800">' + esc(sess.username) + '</span><span class="text-[10px] font-extrabold tracking-widest text-blue-700 uppercase">' + esc(role) + '</span></div>'
-    + '<div class="relative group"><div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white flex items-center justify-center font-bold text-lg border-2 border-white/80 cursor-pointer">' + initial + '</div>'
+    + '<div class="relative group"><div class="w-11 h-11 rounded-2xl avatar-premium text-white flex items-center justify-center font-bold text-lg border-2 border-white/80 cursor-pointer">' + initial + '</div>'
     + '<div class="absolute right-0 mt-3 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all rounded-3xl overflow-hidden" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,0.5);"><div class="p-3"><div class="px-4 py-3 border-b border-white/40 mb-2"><p class="font-bold text-slate-800 text-sm">' + esc(sess.username) + '</p><p class="text-xs text-slate-600">' + esc(sess.panel_code || '') + '</p></div>'
     + '<a href="/settings" class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-white/40 rounded-xl font-medium"><i class="bi bi-gear"></i> Settings</a>'
     + '<div class="border-t border-white/40 my-2"></div><a href="/logout" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50/40 rounded-xl font-medium"><i class="bi bi-box-arrow-right"></i> Sign Out</a>'

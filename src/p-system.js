@@ -15,10 +15,15 @@ export function serverPage(settings, maint, o) {
     + '<button class="btn-premium w-full py-3.5 rounded-2xl font-extrabold text-sm uppercase mt-4">Save Server Config</button></form>';
 }
 
-export function settingsPage(sess, o, urls) {
+export function settingsPage(sess, o, urls, curTheme) {
   const isOwner = sess.role === 'OWNER';
   const msg = o.ok ? alertBox('ok', 'Done', esc(o.ok)) : o.error ? alertBox('err', 'Error', esc(o.error)) : '';
-  return pageHead('Settings', 'bi-gear-fill', 'Account + panel') + msg
+  const th = curTheme || 'blue';
+  const themes = [['blue', 'Ocean Blue', 'linear-gradient(135deg,#3B82F6,#2563EB)'], ['cherry', 'Cherry Red', 'linear-gradient(135deg,#FB4D6D,#B91C1C)'], ['gold', 'Royal Golden', 'linear-gradient(135deg,#D4A017,#B45309)'], ['emerald', 'Emerald', 'linear-gradient(135deg,#10B981,#046C4E)']];
+  const themeBox = isOwner ? '<form method="POST" class="glass-card p-5 mb-4"><input type="hidden" name="action" value="update_theme"><h3 class="font-black mb-1"><i class="bi bi-palette-fill mr-1"></i>UI Theme</h3><p class="text-[11px] text-slate-500 mb-3">Poora panel — buttons, nav, background — isi rang me badlega.</p><div class="grid grid-cols-2 md:grid-cols-4 gap-3">'
+    + themes.map(t => '<label class="clay-card p-3 rounded-2xl cursor-pointer text-center" style="' + (th === t[0] ? 'outline:3px solid var(--p1)' : '') + '"><div class="theme-swatch" style="background:' + t[2] + '"></div><input type="radio" name="ui_theme" value="' + t[0] + '"' + (th === t[0] ? ' checked' : '') + ' class="mb-1" style="accent-color:#111"><p class="text-xs font-extrabold">' + t[1] + (th === t[0] ? ' ✓' : '') + '</p></label>').join('')
+    + '</div><button class="btn-premium w-full py-3 rounded-xl text-xs font-bold mt-3">Apply Theme</button></form>' : '';
+  return pageHead('Settings', 'bi-gear-fill', 'Account + panel') + msg + themeBox
     + '<div class="glass-card p-5 mb-4"><h3 class="font-black mb-2">API URLs</h3><div class="space-y-2 text-xs font-mono break-all"><div class="clay-card p-3 rounded-2xl">CONNECT: ' + esc(urls.connect) + '</div><div class="clay-card p-3 rounded-2xl">ENCRYPT: ' + esc(urls.encrypt) + '</div></div></div>'
     + '<form method="POST" class="glass-card p-5 mb-4"><input type="hidden" name="action" value="update_password"><h3 class="font-black mb-3">Change Password</h3><div class="grid md:grid-cols-2 gap-3"><input type="password" name="current_password" required placeholder="Current" class="clay-card px-4 py-2.5 text-sm rounded-2xl"><input type="password" name="new_password" required placeholder="New (min 4)" class="clay-card px-4 py-2.5 text-sm rounded-2xl"></div><button class="btn-premium w-full py-3 rounded-xl text-xs font-bold mt-3">Update Password</button></form>'
     + (isOwner ? '<form method="POST" class="glass-card p-5"><input type="hidden" name="action" value="update_branding"><h3 class="font-black mb-3">Panel Branding</h3><input type="text" name="panel_name" value="' + esc(o.panelName || '') + '" class="w-full clay-card px-4 py-2.5 text-sm rounded-2xl"><button class="btn-premium w-full py-3 rounded-xl text-xs font-bold mt-3">Save Name</button></form>' : '');

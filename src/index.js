@@ -75,6 +75,11 @@ async function formParams(req) {
   } catch {}
   return {};
 }
+const THEMES = ['blue', 'cherry', 'gold', 'emerald'];
+async function getTheme(db, pc) {
+  try { const r = await db.prepare("SELECT setting_value FROM mod_settings WHERE setting_name='ui_theme' AND panel_code=?").bind(pc).first(); if (r && THEMES.includes(r.setting_value)) return r.setting_value; } catch {}
+  return 'blue';
+}
 async function panelName(db, pc, fallback) {
   try { const r = await db.prepare("SELECT setting_value FROM mod_settings WHERE setting_name='panel_name' AND panel_code=?").bind(pc).first(); if (r && r.setting_value) return r.setting_value; } catch {}
   return fallback;
@@ -201,8 +206,8 @@ export default {
     const myPanel = sess.panel_code || mainPanel;
     const myId = sess.id, myRole = sess.role;
     const isOA = myRole === 'OWNER' || myRole === 'ADMIN';
-    const P = async (route, title, content) => html(panelLayout({ title, route, sess, panelName: await panelName(db, myPanel, envName), content }));
-    const S = (route, title, content) => html(layout({ title, route, username: sess.username, panelCode: myPanel, panelName: envName, content }));
+    const P = async (route, title, content) => html(panelLayout({ title, route, sess, panelName: await panelName(db, myPanel, envName), content, theme: await getTheme(db, myPanel) }));
+    const S = async (route, title, content) => html(layout({ title, route, username: sess.username, panelCode: myPanel, panelName: envName, content, theme: await getTheme(db, myPanel) }));
     const needOA = () => { if (!isOA) return deny(); return null; };
     const needOwner = () => { if (myRole !== 'OWNER') return deny(); return null; };
 
@@ -230,14 +235,15 @@ export default {
       if (method === 'POST') {
         const p = await formParams(request);
         const dur = String(p.duration || '');
-        const limit = Math.max(1, parseInt(p.device_limit, 10) || 1);
-        const bulk = p.is_bulk != null;
-        const amount = bulk ? Math.min(50, Math.max(1, parseInt(p.bulk_amount, 10) || 1)) : 1;
+        const limit = Math.min(10, Math.max(1, parseInt(p.device_limit, 10) || 1));
+        let amount = Math.min(50, Math.max(1, parseInt(p.bulk_amount, 10) || 1));
+        const bulk = p.is_bulk != null || amount > 1;
+        if (!bulk) amount = 1;
         let custom = String(p.custom_key || '').trim();
         let server = 'PRIVATE';
         if (myRole === 'OWNER') { const s = String(p.server_type || 'PRIVATE').toUpperCase(); if (['ADMIN', 'SAFE', 'PRIVATE', 'PUBLIC'].includes(s)) server = s; }
         if (!KEY_DURATIONS.includes(dur)) error = 'Invalid duration.';
-        else if (!bulk && custom && custom.length > 50) error = 'Custom key max 50 chars.';
+        else if (amount === 1 && custom && custom.length > 50) error = 'Custom key max 50 chars.';
         else {
           const prow = await db.prepare('SELECT panel_code FROM panels WHERE panel_code=?').bind(myPanel).first().catch(() => null);
           if (!prow) error = "Panel '" + myPanel + "' database me nahi mila. Owner se panel create karwao.";
@@ -250,12 +256,12 @@ export default {
             if (!error) {
               if (myRole !== 'OWNER') await db.prepare('UPDATE users SET balance=balance-? WHERE id=? AND balance>=?').bind(total, myId, total).run();
               for (let i = 0; i < amount; i++) {
-                let kv = (!bulk && custom) ? custom : dur + '-' + arcxRand(12);
+                let kv = (amount === 1 && custom) ? custom : dur + '-' + arcxRand(12);
                 let done = false;
                 for (let t = 0; t < 10 && !done; t++) {
                   try { await db.prepare('INSERT INTO api_keys (key_value,duration,device_limit,panel_code,created_by,server_type) VALUES (?,?,?,?,?,?)').bind(kv, dur, limit, myPanel, myId, server).run(); keys.push(kv); done = true; }
                   catch (e) {
-                    if (!bulk && custom) { error = 'Duplicate key. Try another custom key.'; break; }
+                    if (amount === 1 && custom) { error = 'Duplicate key. Try another custom key.'; break; }
                     kv = dur + '-' + arcxRand(12);
                   }
                 }
@@ -499,11 +505,15 @@ export default {
           else { await db.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(await hashPassword(String(p.new_password)), myId).run(); ok = 'Password updated.'; }
         } else if (p.action === 'update_branding' && myRole === 'OWNER') {
           await db.prepare('INSERT INTO mod_settings (setting_name,setting_value,panel_code) VALUES (?,?,?) ON CONFLICT(setting_name,panel_code) DO UPDATE SET setting_value=excluded.setting_value').bind('panel_name', String(p.panel_name || '').slice(0, 50), myPanel).run(); ok = 'Panel name saved.';
+        } else if (p.action === 'update_theme' && myRole === 'OWNER') {
+          const t = String(p.ui_theme || 'blue');
+          if (!THEMES.includes(t)) error = 'Invalid theme.';
+          else { await db.prepare('INSERT INTO mod_settings (setting_name,setting_value,panel_code) VALUES (?,?,?) ON CONFLICT(setting_name,panel_code) DO UPDATE SET setting_value=excluded.setting_value').bind('ui_theme', t, myPanel).run(); ok = 'Theme applied.'; }
         }
       }
       const base = 'https://' + url.host;
       const pn = await panelName(db, myPanel, envName);
-      return P('settings', 'Settings', settingsPage(sess, { ok, error, panelName: pn }, { connect: base + '/connect/' + myPanel, encrypt: base + '/encrypt/' + myPanel }));
+      return P('settings', 'Settings', settingsPage(sess, { ok, error, panelName: pn }, { connect: base + '/connect/' + myPanel, encrypt: base + '/encrypt/' + myPanel }, await getTheme(db, myPanel)));
     }
 
     // ---------- LOADER ----------
