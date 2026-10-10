@@ -326,9 +326,9 @@ export default {
         const p = await formParams(request);
         const tid = parseInt(p.target_id, 10) || 0, amt = Math.abs(parseInt(p.amount, 10) || 0);
         const t = tid ? await db.prepare('SELECT * FROM users WHERE id=? AND panel_code=?').bind(tid, myPanel).first().catch(() => null) : null;
-        const allowed = t && (myRole === 'OWNER' ? t.id !== myId : (t.id === myId || (t.role === 'RESELLER' && (t.invited_by | 0) === myId)) && t.role !== 'OWNER' && t.id !== myId ? true : (t.id === myId && p.action !== 'toggle_block'));
+        const tIsOwnReseller = t && t.role === 'RESELLER' && (t.invited_by | 0) === myId;
         if (!t) error = 'User not found.';
-        else if (myRole === 'ADMIN' && (t.role === 'OWNER' || (t.id !== myId && !((t.role === 'RESELLER' && (t.invited_by | 0) === myId)))))) error = 'Not allowed.';
+        else if (myRole === 'ADMIN' && (t.role === 'OWNER' || (t.id !== myId && !tIsOwnReseller))) error = 'Not allowed.';
         else if (p.action === 'toggle_block') {
           if (t.id === myId) error = 'Self block nahi.';
           else { await db.prepare('UPDATE users SET is_blocked=1-is_blocked WHERE id=?').bind(tid).run(); ok = 'Block toggled.'; }
