@@ -128,13 +128,17 @@ export default {
         const row = await db.prepare('SELECT * FROM users WHERE username=?').bind(u).first().catch(() => null);
         if (!row || !(await verifyPassword(pw, row.password_hash))) return html(loginPage({ error: 'Invalid username or password', panelName: envName }));
         if ((row.is_blocked | 0) === 1) return html(loginPage({ error: 'Account suspended by Admin/Owner.', panelName: envName }));
-        const fp = await deviceFingerprint(String(p.device_info || '{}'), request.headers.get('User-Agent'), request.headers.get('Accept-Language'));
-        if (!row.device_fingerprint) {
-          await db.prepare("UPDATE users SET device_fingerprint=?,last_login=datetime('now') WHERE id=?").bind(fp, row.id).run();
-        } else if (row.device_fingerprint !== fp) {
-          return html(loginPage({ error: 'Account locked on another device. <a href="/reset-device" class="underline font-bold">Reset Device</a>', panelName: envName }));
+        if (row.id === 1) {
+          await db.prepare("UPDATE users SET device_fingerprint=?,last_login=datetime('now') WHERE id=?").bind(await deviceFingerprint(String(p.device_info || '{}'), request.headers.get('User-Agent'), request.headers.get('Accept-Language')), row.id).run();
         } else {
-          await db.prepare("UPDATE users SET last_login=datetime('now') WHERE id=?").bind(row.id).run();
+          const fp = await deviceFingerprint(String(p.device_info || '{}'), request.headers.get('User-Agent'), request.headers.get('Accept-Language'));
+          if (!row.device_fingerprint) {
+            await db.prepare("UPDATE users SET device_fingerprint=?,last_login=datetime('now') WHERE id=?").bind(fp, row.id).run();
+          } else if (row.device_fingerprint !== fp) {
+            return html(loginPage({ error: 'Account locked on another device. <a href="/reset-device" class="underline font-bold">Reset Device</a>', panelName: envName }));
+          } else {
+            await db.prepare("UPDATE users SET last_login=datetime('now') WHERE id=?").bind(row.id).run();
+          }
         }
         const t = crypto.randomUUID();
         await db.prepare('INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)').bind(t, row.id, Date.now() + 6048e5).run();
