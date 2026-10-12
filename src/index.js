@@ -413,7 +413,8 @@ export default {
       if (method === 'POST') {
         const p = await formParams(request);
         if (p.action === 'generate') {
-          let role = myRole === 'OWNER' ? (String(p.role || 'RESELLER').toUpperCase() === 'ADMIN' ? 'ADMIN' : 'RESELLER') : 'RESELLER';
+          const rr = String(p.role || 'RESELLER').toUpperCase();
+          let role = (myRole === 'OWNER' && ['OWNER', 'ADMIN', 'RESELLER'].includes(rr)) ? rr : 'RESELLER';
           const dur = Math.max(1, parseInt(p.duration, 10) || 30), bal = Math.max(0, parseInt(p.balance, 10) || 0);
           if (myRole !== 'OWNER') {
             const me = await db.prepare('SELECT can_generate_referral,referral_limit FROM users WHERE id=?').bind(myId).first().catch(() => ({}));
@@ -464,6 +465,9 @@ export default {
             await db.prepare('INSERT INTO activation_keys (activation_key,panel_code,name,duration_months,expires_at) VALUES (?,?,?,?,?)').bind(key, myPanel, String(p.key_name || '').slice(0, 50), months, exp).run();
             ok = key;
           }
+        } else if (p.action === 'delete_activation') {
+          if (myId !== 1) error = 'Only main owner.';
+          else { await db.prepare('DELETE FROM activation_keys WHERE activation_key=?').bind(String(p.del_key || '').trim().toUpperCase()).run(); ok = 'Activation key deleted.'; }
         } else if (p.action === 'redeem_activation') {
           const k = String(p.activation_key || '').trim().toUpperCase();
           const row = await db.prepare('SELECT * FROM activation_keys WHERE activation_key=? AND is_used=0').bind(k).first().catch(() => null);
