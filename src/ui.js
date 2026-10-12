@@ -86,6 +86,15 @@ body[data-theme="gold"] .glass-sidebar{background:rgba(255,240,200,0.10);}
 body[data-theme="gold"] h1,body[data-theme="gold"] h2,body[data-theme="gold"] h3{font-family:Georgia,'Times New Roman',serif;letter-spacing:.01em;}
 body[data-theme="emerald"] .nav-active{border-radius:16px !important;}
 body[data-theme="emerald"] .glass-sidebar{background:rgba(210,245,227,0.10);}
+.sw{position:relative;width:60px;height:32px;flex-shrink:0;display:inline-block;}
+.sw input{opacity:0;width:0;height:0;}
+.sw .tr{position:absolute;inset:0;border-radius:999px;background:rgba(148,163,184,0.45);transition:.3s;cursor:pointer;}
+.sw .tr:before{content:'';position:absolute;width:26px;height:26px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 2px 6px rgba(0,0,0,0.25);}
+.sw input:checked + .tr{background:linear-gradient(135deg,var(--p1),var(--p2));}
+.sw input:checked + .tr:before{transform:translateX(28px);}
+.inp-icon{position:relative;}
+.inp-icon > i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94A3B8;}
+.inp-icon > input{padding-left:40px !important;}
 `;
 
 export const BASE_JS = `
