@@ -1,10 +1,10 @@
 import { esc } from './ui.js';
 
 export function tabHead(title, icon, sub, tabsId, mundoCount, bcoreCount) {
-  return '<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"><div>'
-    + '<h1 class="text-2xl md:text-3xl font-black text-slate-800 flex items-center gap-3"><i class="bi ' + icon + ' text-emerald-500"></i> ' + title + '</h1>'
-    + '<p class="text-slate-500 text-sm mt-1">' + sub + '</p></div>'
-    + '<div class="dual-tab-container" id="' + tabsId + '">'
+  return '<div class="relative mb-5 overflow-hidden rounded-3xl p-5 md:p-6 avatar-premium"><div class="absolute top-0 right-0 w-56 h-56 bg-white/10 rounded-full blur-[60px]"></div>'
+    + '<div class="relative z-10 flex items-center gap-3"><div class="w-12 h-12 shrink-0 rounded-2xl bg-white/20 border border-white/30 text-white flex items-center justify-center text-xl"><i class="bi ' + icon + '"></i></div>'
+    + '<div class="min-w-0"><h1 class="text-xl md:text-2xl font-black text-white truncate">' + title + '</h1><p class="text-white/75 text-[11px] md:text-xs font-medium">' + sub + '</p></div></div></div>'
+    + '<div class="flex justify-start sm:justify-end mb-6"><div class="dual-tab-container" id="' + tabsId + '">'
     + '<button class="dual-tab-btn active-mundo" data-tab="mundo" onclick="switchDualTab(\'' + tabsId + '\',\'mundo\')"><i class="bi bi-cpu mr-1"></i> MUNDO' + (mundoCount != null ? ' (' + mundoCount + ')' : '') + '</button>'
     + '<button class="dual-tab-btn" data-tab="bcore" onclick="switchDualTab(\'' + tabsId + '\',\'bcore\')"><i class="bi bi-lightning-charge-fill mr-1"></i> BCORE' + (bcoreCount != null ? ' (' + bcoreCount + ')' : '') + '</button>'
     + '</div></div>';
