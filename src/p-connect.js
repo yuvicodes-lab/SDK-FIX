@@ -114,7 +114,7 @@ export async function handleEncrypt(request, db, panel) {
     const owner = await db.prepare("SELECT panel_expiry FROM users WHERE panel_code=? AND role='OWNER' ORDER BY id ASC LIMIT 1").bind(panel).first().catch(() => null);
     if (!owner || !owner.panel_expiry || Date.parse(String(owner.panel_expiry).replace(' ', 'T') + 'Z') < Date.now()) return J({ status: false, reason: 'PANEL NOT ACTIVATED' }, 403);
     const s = await loadSettings(db, panel);
-    if (!s.aes_key || !s.aes_iv) return J({ status: false, reason: 'ENCRYPTION NOT CONFIGURED' }, 500);
+    if (!s.aes_key || !s.aes_iv || !/^[0-9a-fA-F]{64}$/.test(s.aes_key) || !/^[0-9a-fA-F]{32}$/.test(s.aes_iv)) return J({ status: false, reason: 'ENCRYPTION NOT CONFIGURED' }, 500);
     const mnt = await db.prepare('SELECT is_active,reason FROM mod_maintenance WHERE panel_code=?').bind(panel).first().catch(() => null);
     if (mnt && (mnt.is_active | 0) === 1) return J({ status: false, reason: clean(mnt.reason, 255) || 'SERVER UNDER MAINTENANCE' }, 503);
     const v = await verifyKey(db, panel, userKey, serial);

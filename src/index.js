@@ -451,11 +451,12 @@ export default {
         if (p.action === 'generate_aes') {
           if (myId !== 1) error = 'Only main owner.';
           else {
-            const rb = new Uint8Array(24); crypto.getRandomValues(rb);
-            const hex = [...rb].map(b => b.toString(16).padStart(2, '0')).join('');
-            await db.prepare('INSERT INTO mod_settings (setting_name,setting_value,panel_code) VALUES (?,?,?) ON CONFLICT(setting_name,panel_code) DO UPDATE SET setting_value=excluded.setting_value').bind('aes_key', hex.slice(0, 64), myPanel).run();
-            await db.prepare('INSERT INTO mod_settings (setting_name,setting_value,panel_code) VALUES (?,?,?) ON CONFLICT(setting_name,panel_code) DO UPDATE SET setting_value=excluded.setting_value').bind('aes_iv', hex.slice(0, 32), myPanel).run();
-            ok = 'AES rotated.';
+            const rk = new Uint8Array(32); crypto.getRandomValues(rk);
+            const riv = new Uint8Array(16); crypto.getRandomValues(riv);
+            const hx = (a) => [...a].map(b => b.toString(16).padStart(2, '0')).join('');
+            await db.prepare('INSERT INTO mod_settings (setting_name,setting_value,panel_code) VALUES (?,?,?) ON CONFLICT(setting_name,panel_code) DO UPDATE SET setting_value=excluded.setting_value').bind('aes_key', hx(rk), myPanel).run();
+            await db.prepare('INSERT INTO mod_settings (setting_name,setting_value,panel_code) VALUES (?,?,?) ON CONFLICT(setting_name,panel_code) DO UPDATE SET setting_value=excluded.setting_value').bind('aes_iv', hx(riv), myPanel).run();
+            ok = 'AES rotated (256-bit key + 128-bit IV).';
           }
         } else if (p.action === 'generate_activation') {
           if (myId !== 1) error = 'Only main owner.';
