@@ -1,4 +1,5 @@
-import { createHash, createCipheriv, createDecipheriv } from 'node:crypto';
+import { createCipheriv, createDecipheriv } from 'node:crypto';
+import { md5hex } from './crypto.js';
 
 export const ARCX_LIBS = {
   PUBLIC: 'https://github.com/yuvicodes-lab/ONLINE-MOD/raw/refs/heads/main/lib_public.zip',
@@ -8,8 +9,19 @@ export const ARCX_LIBS = {
 };
 export const ARCX_VERSIONS = { PUBLIC: 'PUBLIC FREE', PRIVATE: 'PRIVATE PAID', ADMIN: 'ADMIN PRIVATE • PAID', SAFE: 'SAFE FREE' };
 
-const md5 = s => createHash('md5').update(s).digest('hex');
+const md5 = s => md5hex(s);
 const clean = (v, max = 255) => (typeof v === 'string' && v.trim() !== '' && v.trim().length <= max) ? v.trim() : '';
+
+// Login session ho to asal error batate hain (debug ke liye), warna generic.
+async function errDetail(db, request, e) {
+  try {
+    const m = (request.headers.get('Cookie') || '').match(/sdk_session=([^;]+)/);
+    if (!m) return '';
+    const s = await db.prepare('SELECT 1 ok FROM sessions WHERE token=? AND expires_at>?').bind(decodeURIComponent(m[1]), Date.now()).first();
+    if (s) return ' :: ' + String((e && e.message) || e).slice(0, 300);
+  } catch {}
+  return '';
+}
 
 export function aes256CbcEnc(json, keyHex, ivHex) {
   const c = createCipheriv('aes-256-cbc', Buffer.from(keyHex, 'hex'), Buffer.from(ivHex, 'hex'));
@@ -94,7 +106,7 @@ export async function handleConnect(request, db, panel) {
         exdate: v.expiry, device: String(v.key.device_limit | 0),
       }
     });
-  } catch (e) { return J({ status: false, reason: 'SERVER ERROR' }, 500); }
+  } catch (e) { return J({ status: false, reason: 'SERVER ERROR' + await errDetail(db, request, e) }, 500); }
 }
 
 export async function handleEncrypt(request, db, panel) {
@@ -130,5 +142,5 @@ export async function handleEncrypt(request, db, panel) {
       }
     };
     return J({ status: true, payload: aes256CbcEnc(JSON.stringify(inner), s.aes_key, s.aes_iv) });
-  } catch (e) { return J({ status: false, reason: 'SERVER ERROR' }, 500); }
+  } catch (e) { return J({ status: false, reason: 'SERVER ERROR' + await errDetail(db, request, e) }, 500); }
 }
